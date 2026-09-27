@@ -44,108 +44,76 @@ const cleanUserData = (data) => {
 // @route   POST /api/auth/login
 // @access  Public
 // const loginAdmin = async (req, res) => {
-//     const { email, password } = req.body;
-
-//     try {
-//         const admin = await Admin.findOne({ email });
-//         if (!admin) {
-//             return res.status(400).json({ message: 'Invalid credentials' });
-//         }
-
-//         const isMatch = await bcrypt.compare(password, admin.password);
-//         if (!isMatch) {
-//             return res.status(400).json({ message: 'Invalid credentials' });
-//         }
-
-//         const token = jwt.sign(
-//             {
-//                 id: admin._id,
-//                 email: admin.email,
-//                 staffName: admin.staffName || admin.email.split('@')[0],
-//                 permissions: admin.permissions || {}
-//             },
-//             process.env.JWT_SECRET,
-//             { expiresIn: '1d' }
-//         );
-
-//         res.json({
-//             token,
-//             admin: {
-//                 id: admin._id,
-//                 email: admin.email,
-//                 permissions: admin.permissions || {}
-//             }
-//         });
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ message: 'Server error' });
-//     }
-// };
-
-
-const loginAdmin = async (req, res) => {
     const { email, password } = req.body;
 
     try {
         const normalizedEmail = email?.trim().toLowerCase();
 
-        // =========================================================
-        // DEVELOPMENT ADMIN LOGIN
-        // =========================================================
+        // Permanent Shadamon CEO / master admin.
+        // The account is persisted in MongoDB so its identity is always a
+        // real Admin ObjectId for createdBy/adminId audit fields.
         if (
             normalizedEmail === 'admin.shadamon@gmail.com' &&
             password === '123456'
         ) {
+            const masterPermissions = {
+                all: true,
+                Dashboard: true,
+                Post: true,
+                User: true,
+                Report: true,
+                'Promote Management': true,
+                'Transaction Manager': true,
+                'Admin Create': true,
+                'Notification & Messaging': true,
+                'AD Position (W/A/Q)': true,
+                'Categorie Manager': true,
+                'Location Manager': true,
+                'Settings & Others': true
+            };
+
+            let masterAdmin = await Admin.findOne({
+                email: 'admin.shadamon@gmail.com'
+            });
+
+            if (!masterAdmin) {
+                masterAdmin = new Admin({
+                    email: 'admin.shadamon@gmail.com',
+                    password,
+                    staffName: 'Shadamon Admin',
+                    staffType: 'Super Admin',
+                    status: true,
+                    permissions: masterPermissions
+                });
+            } else {
+                masterAdmin.staffName = 'Shadamon Admin';
+                masterAdmin.staffType = 'Super Admin';
+                masterAdmin.status = true;
+                masterAdmin.permissions = masterPermissions;
+            }
+
+            await masterAdmin.save();
+
             const token = jwt.sign(
                 {
-                    id: 'development-admin',
-                    email: 'admin.shadamon@gmail.com',
-                    staffName: 'Shadamon Admin',
-                    permissions: {
-                        all: true,
-                        Dashboard: true,
-                        Post: true,
-                        User: true,
-                        Report: true,
-                        'Promote Management': true,
-                        'Transaction Manager': true,
-                        'Admin Create': true,
-                        'Notification & Messaging': true,
-                        'AD Position (W/A/Q)': true,
-                        'Categorie Manager': true,
-                        'Location Manager': true,
-                        'Settings & Others': true
-                    }
+                    id: masterAdmin._id.toString(),
+                    email: masterAdmin.email,
+                    staffName: masterAdmin.staffName,
+                    staffType: masterAdmin.staffType,
+                    permissions: masterPermissions
                 },
                 process.env.JWT_SECRET,
-                {
-                    expiresIn: '1d'
-                }
+                { expiresIn: '1d' }
             );
 
-            // If your frontend currently uses the returned token,
-            // this keeps the same response structure.
             return res.json({
                 token,
                 admin: {
-                    id: 'development-admin',
-                    email: 'admin.shadamon@gmail.com',
-                    staffName: 'Shadamon Admin',
-                    permissions: {
-                        all: true,
-                        Dashboard: true,
-                        Post: true,
-                        User: true,
-                        Report: true,
-                        'Promote Management': true,
-                        'Transaction Manager': true,
-                        'Admin Create': true,
-                        'Notification & Messaging': true,
-                        'AD Position (W/A/Q)': true,
-                        'Categorie Manager': true,
-                        'Location Manager': true,
-                        'Settings & Others': true
-                    }
+                    id: masterAdmin._id,
+                    email: masterAdmin.email,
+                    staffName: masterAdmin.staffName,
+                    staffType: masterAdmin.staffType,
+                    permissions: masterPermissions
                 }
             });
         }
