@@ -252,39 +252,11 @@ const updateAdmin = async (req, res) => {
 // @route   GET /api/admins/me
 const getCurrentAdmin = async (req, res) => {
     try {
-        // The development admin is intentionally not stored in MongoDB.
-        // Return the same permission shape used by the real Admin model so
-        // the frontend sidebar and protected API routes behave identically.
-        if (
-            req.admin?.id === 'development-admin' ||
-            req.admin?.email === 'admin.shadamon@gmail.com'
-        ) {
-            return res.json({
-                id: 'development-admin',
-                _id: 'development-admin',
-                email: 'admin.shadamon@gmail.com',
-                staffName: 'Shadamon Admin',
-                staffType: 'Super Admin',
-                status: true,
-                permissions: {
-                    all: true,
-                    Dashboard: true,
-                    Post: true,
-                    User: true,
-                    Report: true,
-                    'Promote Management': true,
-                    'Transaction Manager': true,
-                    'Admin Create': true,
-                    'Notification & Messaging': true,
-                    'AD Position (W/A/Q)': true,
-                    'Categorie Manager': true,
-                    'Location Manager': true,
-                    'Settings & Others': true
-                }
-            });
-        }
-
+        // The CEO/master admin is now a real MongoDB Admin document.
+        // Always return the persisted admin so its real ObjectId is used
+        // consistently by the frontend and audit fields such as createdBy.adminId.
         const admin = await Admin.findById(req.admin.id).select('-password');
+
         if (!admin) {
             return res.status(404).json({ message: 'Admin not found' });
         }
