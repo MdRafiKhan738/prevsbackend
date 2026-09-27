@@ -103,14 +103,18 @@ const loginAdmin = async (req, res) => {
                     staffName: 'Shadamon Admin',
                     permissions: {
                         all: true,
-                        users: true,
-                        ads: true,
-                        categories: true,
-                        transactions: true,
-                        settings: true,
-                        dashboard: true,
-                        notifications: true,
-                        admins: true
+                        Dashboard: true,
+                        Post: true,
+                        User: true,
+                        Report: true,
+                        'Promote Management': true,
+                        'Transaction Manager': true,
+                        'Admin Create': true,
+                        'Notification & Messaging': true,
+                        'AD Position (W/A/Q)': true,
+                        'Categorie Manager': true,
+                        'Location Manager': true,
+                        'Settings & Others': true
                     }
                 },
                 process.env.JWT_SECRET,
@@ -129,14 +133,18 @@ const loginAdmin = async (req, res) => {
                     staffName: 'Shadamon Admin',
                     permissions: {
                         all: true,
-                        users: true,
-                        ads: true,
-                        categories: true,
-                        transactions: true,
-                        settings: true,
-                        dashboard: true,
-                        notifications: true,
-                        admins: true
+                        Dashboard: true,
+                        Post: true,
+                        User: true,
+                        Report: true,
+                        'Promote Management': true,
+                        'Transaction Manager': true,
+                        'Admin Create': true,
+                        'Notification & Messaging': true,
+                        'AD Position (W/A/Q)': true,
+                        'Categorie Manager': true,
+                        'Location Manager': true,
+                        'Settings & Others': true
                     }
                 }
             });
@@ -276,14 +284,47 @@ const updateAdmin = async (req, res) => {
 // @route   GET /api/admins/me
 const getCurrentAdmin = async (req, res) => {
     try {
+        // The development admin is intentionally not stored in MongoDB.
+        // Return the same permission shape used by the real Admin model so
+        // the frontend sidebar and protected API routes behave identically.
+        if (
+            req.admin?.id === 'development-admin' ||
+            req.admin?.email === 'admin.shadamon@gmail.com'
+        ) {
+            return res.json({
+                id: 'development-admin',
+                _id: 'development-admin',
+                email: 'admin.shadamon@gmail.com',
+                staffName: 'Shadamon Admin',
+                staffType: 'Super Admin',
+                status: true,
+                permissions: {
+                    all: true,
+                    Dashboard: true,
+                    Post: true,
+                    User: true,
+                    Report: true,
+                    'Promote Management': true,
+                    'Transaction Manager': true,
+                    'Admin Create': true,
+                    'Notification & Messaging': true,
+                    'AD Position (W/A/Q)': true,
+                    'Categorie Manager': true,
+                    'Location Manager': true,
+                    'Settings & Others': true
+                }
+            });
+        }
+
         const admin = await Admin.findById(req.admin.id).select('-password');
         if (!admin) {
             return res.status(404).json({ message: 'Admin not found' });
         }
-        res.json(admin);
+
+        return res.json(admin);
     } catch (err) {
         console.error('Error fetching current admin:', err);
-        res.status(500).json({ message: 'Server error' });
+        return res.status(500).json({ message: 'Server error' });
     }
 };
 
