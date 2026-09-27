@@ -28,22 +28,34 @@ const verifyToken = (req, res, next) => {
 const checkPermission = (permission) => {
     return async (req, res, next) => {
         try {
-            // First check if permissions are in the JWT payload (for performance)
-            if (req.admin.permissions && req.admin.permissions[permission] === true) {
+            const jwtPermissions = req.admin?.permissions || {};
+
+            // Development/super-admin tokens may explicitly grant everything.
+            // Keep this check before the database fallback because the development
+            // admin intentionally does not have a MongoDB ObjectId.
+            if (
+                jwtPermissions.all === true ||
+                jwtPermissions[permission] === true
+            ) {
                 return next();
             }
 
-            // Fallback: Fetch latest from database (in case of old tokens or fresh updates)
+            // Fallback to the database for normal admin accounts. This keeps
+            // permission changes effective without requiring a new login.
             const Admin = require('../models/Admin');
             const admin = await Admin.findById(req.admin.id);
 
-            if (!admin || !admin.permissions || admin.permissions.get(permission) !== true) {
+            const hasPermission =
+                admin?.permissions instanceof Map
+                    ? admin.permissions.get(permission) === true
+                    : admin?.permissions?.[permission] === true;
+
+            if (!admin || !hasPermission) {
                 return res.status(403).json({
                     message: `Access denied. Requires '${permission}' permission.`
                 });
             }
 
-            // Update req.admin for subsequent middleware in this request
             req.admin.permissions = admin.permissions;
             next();
         } catch (error) {
