@@ -43,145 +43,32 @@ const cleanUserData = (data) => {
 // @desc    Admin login
 // @route   POST /api/auth/login
 // @access  Public
-// const loginAdmin = async (req, res) => {
-//     const { email, password } = req.body;
-
-//     try {
-//         const admin = await Admin.findOne({ email });
-//         if (!admin) {
-//             return res.status(400).json({ message: 'Invalid credentials' });
-//         }
-
-//         const isMatch = await bcrypt.compare(password, admin.password);
-//         if (!isMatch) {
-//             return res.status(400).json({ message: 'Invalid credentials' });
-//         }
-
-//         const token = jwt.sign(
-//             {
-//                 id: admin._id,
-//                 email: admin.email,
-//                 staffName: admin.staffName || admin.email.split('@')[0],
-//                 permissions: admin.permissions || {}
-//             },
-//             process.env.JWT_SECRET,
-//             { expiresIn: '1d' }
-//         );
-
-//         res.json({
-//             token,
-//             admin: {
-//                 id: admin._id,
-//                 email: admin.email,
-//                 permissions: admin.permissions || {}
-//             }
-//         });
-//     } catch (err) {
-//         console.error(err);
-//         res.status(500).json({ message: 'Server error' });
-//     }
-// };
-
 const loginAdmin = async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const normalizedEmail = email?.trim().toLowerCase();
-
-        // =========================================================
-        // DEVELOPMENT ADMIN LOGIN
-        // =========================================================
-        if (
-            normalizedEmail === 'admin.shadamon@gmail.com' &&
-            password === '123456'
-        ) {
-            const token = jwt.sign(
-                {
-                    id: 'development-admin',
-                    email: 'admin.shadamon@gmail.com',
-                    staffName: 'Shadamon Admin',
-                    permissions: {
-                        all: true,
-                        users: true,
-                        ads: true,
-                        categories: true,
-                        transactions: true,
-                        settings: true,
-                        dashboard: true,
-                        notifications: true,
-                        admins: true
-                    }
-                },
-                process.env.JWT_SECRET,
-                {
-                    expiresIn: '1d'
-                }
-            );
-
-            // If your frontend currently uses the returned token,
-            // this keeps the same response structure.
-            return res.json({
-                token,
-                admin: {
-                    id: 'development-admin',
-                    email: 'admin.shadamon@gmail.com',
-                    staffName: 'Shadamon Admin',
-                    permissions: {
-                        all: true,
-                        users: true,
-                        ads: true,
-                        categories: true,
-                        transactions: true,
-                        settings: true,
-                        dashboard: true,
-                        notifications: true,
-                        admins: true
-                    }
-                }
-            });
-        }
-
-        // =========================================================
-        // NORMAL DATABASE ADMIN LOGIN
-        // =========================================================
-
-        const admin = await Admin.findOne({
-            email: normalizedEmail
-        });
-
+        const admin = await Admin.findOne({ email });
         if (!admin) {
-            return res.status(400).json({
-                message: 'Invalid credentials'
-            });
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const isMatch = await bcrypt.compare(
-            password,
-            admin.password
-        );
-
+        const isMatch = await bcrypt.compare(password, admin.password);
         if (!isMatch) {
-            return res.status(400).json({
-                message: 'Invalid credentials'
-            });
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         const token = jwt.sign(
             {
                 id: admin._id,
                 email: admin.email,
-                staffName:
-                    admin.staffName ||
-                    admin.email.split('@')[0],
+                staffName: admin.staffName || admin.email.split('@')[0],
                 permissions: admin.permissions || {}
             },
             process.env.JWT_SECRET,
-            {
-                expiresIn: '1d'
-            }
+            { expiresIn: '1d' }
         );
 
-        return res.json({
+        res.json({
             token,
             admin: {
                 id: admin._id,
@@ -189,16 +76,11 @@ const loginAdmin = async (req, res) => {
                 permissions: admin.permissions || {}
             }
         });
-
     } catch (err) {
-        console.error('Admin login error:', err);
-
-        return res.status(500).json({
-            message: 'Server error'
-        });
+        console.error(err);
+        res.status(500).json({ message: 'Server error' });
     }
 };
-
 
 
 
