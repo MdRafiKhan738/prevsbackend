@@ -1,25 +1,61 @@
 const jwt = require('jsonwebtoken');
 
 // Verify JWT token for admin routes
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
     let token = req.header('x-auth-token');
 
-    // Also check Authorization header
     const authHeader = req.headers.authorization;
     if (!token && authHeader && authHeader.startsWith('Bearer ')) {
         token = authHeader.split(' ')[1];
     }
 
-    // Handle missing or invalid token strings
     if (!token || token === 'undefined' || token === 'null') {
         return res.status(401).json({ message: 'No token, authorization denied' });
     }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+        // Migrate legacy CEO tokens that used the virtual development-admin id.
+        if (
+            decoded.email === 'admin.shadamon@gmail.com' &&
+            decoded.id === 'development-admin'
+        ) {
+            const Admin = require('../models/Admin');
+            const masterAdmin = await Admin.findOne({
+                email: 'admin.shadamon@gmail.com'
+            });
+
+            if (!masterAdmin) {
+                return res.status(401).json({
+                    message: 'Master admin account not initialized. Please sign in again.'
+                });
+            }
+
+            decoded.id = masterAdmin._id.toString();
+            decoded.staffName = masterAdmin.staffName || 'Shadamon Admin';
+            decoded.staffType = masterAdmin.staffType || 'Super Admin';
+            decoded.permissions = {
+                all: true,
+                Dashboard: true,
+                Post: true,
+                User: true,
+                Report: true,
+                'Promote Management': true,
+                'Transaction Manager': true,
+                'Admin Create': true,
+                'Notification & Messaging': true,
+                'AD Position (W/A/Q)': true,
+                'Categorie Manager': true,
+                'Location Manager': true,
+                'Settings & Others': true
+            };
+        }
+
         req.admin = decoded;
         next();
     } catch (e) {
+        console.error('Admin token verification error:', e);
         res.status(401).json({ message: 'Token is not valid' });
     }
 };
