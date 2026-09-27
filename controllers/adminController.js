@@ -43,7 +43,7 @@ const cleanUserData = (data) => {
 // @desc    Admin login
 // @route   POST /api/auth/login
 // @access  Public
-// const loginAdmin = async (req, res) => {
+const loginAdmin = async (req, res) => {
     const { email, password } = req.body;
 
     try {
